@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "ino-tech-crew",
+    "slug": "ino-tech-crew",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "newArchEnabled": true,
+    "icon": "./assets/images/new-logo.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#335EF7"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/new-logo.png",
+        "backgroundColor": "#335EF7"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBvgJSEAQpqFygTZ84BDq0p2KYVHqutrVY"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/new-favicon.png"
+    }
+  }
+}
