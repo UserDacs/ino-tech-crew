@@ -14,15 +14,94 @@ const Home = ({ navigation }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { dark, colors } = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState(["1"]);
+    const [filteredServices, setFilteredServices] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [services, setServices] = useState([]);
 
-  useEffect(() => {
-    checkAuthenticationStatus();
-    }, []);
 
+    const API_URL = "http://192.168.1.104/api/services/list-with-comments";
+  
+
+    useEffect(() => {
+      checkAuthenticationStatus();
+      fetchFilteredServices();
+      }, []);
+  
+  
+    const fetchFilteredServices = async () => {
+      try {
+        setLoading(true);
+        const authToken = await AsyncStorage.getItem("userToken");
+  
+        if (!authToken) {
+          console.error("No auth token found");
+          setLoading(false);
+          return;
+        }
+  
+        console.log("Auth Token:", authToken); // Debugging log
+  
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`, // Use `authToken` directly
+          },
+          body: JSON.stringify({ categories: selectedCategories }), // Send data if required
+        });
+  
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: Failed to fetch services`);
+        }
+  
+        const data = await response.json();
+        console.log(data);
+        
+        setServices(data || []); // Ensure data structure is valid
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    // Toggle category selection
+    const toggleCategory = (categoryId) => {
+      setSelectedCategories((prevCategories) =>
+        prevCategories.includes(categoryId)
+          ? prevCategories.filter((id) => id !== categoryId) // Remove category
+          : [...prevCategories, categoryId] // Add category
+      );
+    };
+  
+    // Category item
+    const renderCategoryItem = ({ item }) => (
+      <TouchableOpacity
+        style={{
+          backgroundColor: selectedCategories.includes(item.id) ? COLORS.primary : "transparent",
+          padding: 10,
+          marginVertical: 5,
+          borderColor: COLORS.primary,
+          borderWidth: 1.3,
+          borderRadius: 24,
+          marginRight: 12,
+        }}
+        onPress={() => toggleCategory(item.id)}
+      >
+        <Text style={{ color: selectedCategories.includes(item.id) ? COLORS.white : COLORS.primary }}>
+          {item.name}
+        </Text>
+      </TouchableOpacity>
+    );
+  
+ 
 
   const checkAuthenticationStatus = async () => {
     try {
       const value = await AsyncStorage.getItem('isAuthenticated');
+
       if (value === 'true') {
         setIsAuthenticated(true);
           await AsyncStorage.setItem('isAuthenticated', 'true');
@@ -206,43 +285,15 @@ const Home = ({ navigation }) => {
   /**
    * Render Top Services
    */
+
+  const handleScroll = (event) => {
+    if (event.nativeEvent.contentOffset.y <= 0) {
+      fetchFilteredServices(); // Reload data when user scrolls to top
+    }
+  };
+  
   const renderTopServices = () => {
-    const [selectedCategories, setSelectedCategories] = useState(["1"]);
-
-    const filteredServices = allServices.filter(service => selectedCategories.includes("1") || selectedCategories.includes(service.categoryId));
-
-    // Category item
-    const renderCategoryItem = ({ item }) => (
-      <TouchableOpacity
-        style={{
-          backgroundColor: selectedCategories.includes(item.id) ? COLORS.primary : "transparent",
-          padding: 10,
-          marginVertical: 5,
-          borderColor: COLORS.primary,
-          borderWidth: 1.3,
-          borderRadius: 24,
-          marginRight: 12,
-        }}
-        onPress={() => toggleCategory(item.id)}>
-        <Text style={{
-          color: selectedCategories.includes(item.id) ? COLORS.white : COLORS.primary
-        }}>{item.name}</Text>
-      </TouchableOpacity>
-    );
-
-    // Toggle category selection
-    const toggleCategory = (categoryId) => {
-      const updatedCategories = [...selectedCategories];
-      const index = updatedCategories.indexOf(categoryId);
-
-      if (index === -1) {
-        updatedCategories.push(categoryId);
-      } else {
-        updatedCategories.splice(index, 1);
-      }
-
-      setSelectedCategories(updatedCategories);
-    };
+   
 
     return (
       <View>
@@ -251,32 +302,28 @@ const Home = ({ navigation }) => {
           navTitle="See all"
           onPress={() => navigation.navigate("PopularServices")}
         />
+       
         <FlatList
-          data={categories}
-          keyExtractor={item => item.id}
-          showsHorizontalScrollIndicator={false}
-          horizontal
-          // renderItem={renderCategoryItem}
-        />
-        <FlatList
-          data={filteredServices}
+          data={services}
           keyExtractor={item => item.id}
           renderItem={({ item }) => {
             return (
               <ServiceCard
                 name={item.name}
-                image={item.image}
-                providerName={item.providerName}
-                price={item.price}
-                isOnDiscount={item.isOnDiscount}
-                oldPrice={item.oldPrice}
-                rating={item.rating}
-                numReviews={item.numReviews}
+                image={{ uri: "http://192.168.1.104"+item.photo_path }} 
+                providerName={item.user ? item.user.name : "Unknown Provider"}
+                price={item.service_fee}
+                // isOnDiscount={item.isOnDiscount}
+                // oldPrice={item.oldPrice}
+                rating={item.ratings.length}
+                numReviews={item.ratings.length}
                 onPress={() => navigation.navigate("ServiceDetails")}
-                categoryId={item.categoryId}
+                // categoryId={item.categoryId}
               />
             )
           }}
+          onScroll={handleScroll} // Detect scrolling
+          scrollEventThrottle={16} // Optimize performance
         />
       </View>
     )
@@ -288,9 +335,7 @@ const Home = ({ navigation }) => {
         {renderHeader()}
         <ScrollView showsVerticalScrollIndicator={false}>
           {renderSearchBar()}
-          {/* {renderBanner()} */}
-          {/* {renderCategories()} */}
-          {renderTopServices()}
+          {renderTopServices()} 
         </ScrollView>
       </View>
     </SafeAreaView>

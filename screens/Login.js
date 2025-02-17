@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, Image, Alert, TouchableOpacity } from 'react-native';
-import React, { useCallback, useEffect, useReducer, useState } from 'react';
+import React, { useCallback, useEffect, useReducer, useState, useContext } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SIZES, icons, images } from '../constants';
 import Header from '../components/Header';
@@ -11,6 +11,7 @@ import Button from '../components/Button';
 import SocialButton from '../components/SocialButton';
 import OrSeparator from '../components/OrSeparator';
 import { useTheme } from '../theme/ThemeProvider';
+import { AuthContext } from '../context/AuthContext';
 
 const isTestMode = true;
 
@@ -28,6 +29,7 @@ const initialState = {
 
 
 const Login = ({ navigation }) => {
+  const { login } = useContext(AuthContext);
   const [formState, dispatchFormState] = useReducer(reducer, initialState);
   const [error, setError] = useState(null);
   const [isChecked, setChecked] = useState(false);
@@ -103,13 +105,10 @@ const Login = ({ navigation }) => {
           <Button
             title="Login"
             filled
-            onPress={() => navigation.navigate("Main")}
+            onPress={() => login(formState.inputValues.email, formState.inputValues.password)}
             style={styles.button}
           />
-          <TouchableOpacity
-            onPress={() => navigation.navigate("ForgotPasswordMethods")}>
-            <Text style={styles.forgotPasswordBtnText}>Forgot the password?</Text>
-          </TouchableOpacity>
+         
           
         </ScrollView>
         <View style={styles.bottomContainer}>

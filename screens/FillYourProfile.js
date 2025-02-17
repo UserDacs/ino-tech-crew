@@ -13,6 +13,9 @@ import DatePickerModal from '../components/DatePickerModal';
 import Button from '../components/Button';
 import { useTheme } from '../theme/ThemeProvider';
 
+import { DatePickerInput } from 'react-native-paper-dates';
+
+
 const isTestMode = true;
 
 const initialState = {
@@ -42,13 +45,17 @@ const FillYourProfile = ({ navigation }) => {
   const [openStartDatePicker, setOpenStartDatePicker] = useState(false);
   const { colors, dark } = useTheme();
 
-  const today = new Date();
-  const startDate = getFormatedDate(
-    new Date(today.setDate(today.getDate() + 1)),
-    "YYYY/MM/DD"
-  );
+  const today = new Date(1960, 11, 12);
+  today.setDate(today.getDate() + 1);
+  
+  const startDate = today.toISOString().split("T")[0]; // YYYY-MM-DD
+  
+  const [startedDate, setStartedDate] = useState(startDate); // Ensure proper initialization
+  
+  console.log("Start Date:", startDate);
+  console.log("State Value:", startedDate);
 
-  const [startedDate, setStartedDate] = useState("12/12/2023");
+  const [date, setDate] = useState(new Date());
 
   const handleOnPressStartDate = () => {
     setOpenStartDatePicker(!openStartDatePicker);
@@ -212,15 +219,7 @@ const FillYourProfile = ({ navigation }) => {
             <View style={{
               width: SIZES.width - 32
             }}>
-              <TouchableOpacity
-                style={[styles.inputBtn, {
-                  backgroundColor: dark ? COLORS.dark2 : COLORS.greyscale500,
-                  borderColor: dark ? COLORS.dark2 : COLORS.greyscale500,
-                }]}
-                onPress={handleOnPressStartDate}>
-                <Text style={{ ...FONTS.body4, color: COLORS.grayscale400 }}>{startedDate}</Text>
-                <Feather name="calendar" size={24} color={COLORS.grayscale400} />
-              </TouchableOpacity>
+             
             </View>
             <View style={[styles.inputContainer, {
               backgroundColor: dark ? COLORS.dark2 : COLORS.greyscale500,
@@ -259,13 +258,7 @@ const FillYourProfile = ({ navigation }) => {
           </View>
         </ScrollView>
       </View>
-      <DatePickerModal
-        open={openStartDatePicker}
-        startDate={startDate}
-        selectedDate={startedDate}
-        onClose={() => setOpenStartDatePicker(false)}
-        onChangeStartDate={(date) => setStartedDate(date)}
-      />
+
       {RenderAreasCodesModal()}
       <View style={styles.bottomContainer}>
         <Button

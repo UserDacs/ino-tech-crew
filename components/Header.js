@@ -9,21 +9,17 @@ const Header = ({ title }) => {
   const { colors, dark } = useTheme();
 
   return (
-    <View style={[styles.container, {
-      backgroundColor: dark ? COLORS.dark1 : COLORS.white
-    }]}>
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}>
-        <Image
-          source={icons.back}
-          resizeMode='contain'
-          style={[styles.backIcon, {
-            tintColor: colors.text
-          }]} />
-      </TouchableOpacity>
-      <Text style={[styles.title, {
-        color: colors.text
-      }]}>{title}</Text>
+    <View style={[styles.container, { backgroundColor: dark ? COLORS.dark1 : COLORS.white }]}>
+      {title !== "Login" && ( // Hide back button if title is "Login"
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Image
+            source={icons.back}
+            resizeMode="contain"
+            style={[styles.backIcon, { tintColor: colors.text }]}
+          />
+        </TouchableOpacity>
+      )}
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
     </View>
   )
 };

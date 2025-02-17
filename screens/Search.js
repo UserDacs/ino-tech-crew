@@ -11,6 +11,7 @@ import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { FontAwesome } from "@expo/vector-icons";
 import ServiceCard from '../components/ServiceCard';
 import { useTheme } from '../theme/ThemeProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Handler slider
 const CustomSliderHandle = ({ enabled, markerStyle }) => {
@@ -82,21 +83,64 @@ const Search = ({ navigation }) => {
    */
   const renderContent = () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [filteredServices, setFilteredServices] = useState(allServices);
+    const [filteredServices, setFilteredServices] = useState([]);
     const [resultsCount, setResultsCount] = useState(0);
+    const API_URL = "http://192.168.1.104/api/services/list-with-comments";
+
 
     useEffect(() => {
       handleSearch();
     }, [searchQuery]);
 
 
-    const handleSearch = () => {
-        const services = allServices.filter((service) =>
-          service.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setFilteredServices(services);
-        setResultsCount(services.length);
+    const handleSearch = async () => {
+
+        try {
+  
+          const authToken = await AsyncStorage.getItem("userToken");
+    
+          if (!authToken) {
+            console.error("No auth token found");
+           
+            return;
+          }
+    
+          console.log("Auth Token:", authToken); // Debugging log
+    
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`, // Use `authToken` directly
+            },
+            body: JSON.stringify({ categories: selectedCategories }), // Send data if required
+          });
+    
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch services`);
+          }
+    
+          const data = await response.json();
+          console.log(data);
+
+          const services = data.filter((service) =>
+            service.name.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          
+          setFilteredServices(services); // Ensure data structure is valid
+
+          setResultsCount(services.length);
+        } catch (error) {
+          console.error("Error fetching services:", error);
+        } finally {
+          console.error("Error fetching services:", error);
+        }
+
+
     };
+
+
 
     return (
       <View>
@@ -153,25 +197,25 @@ const Search = ({ navigation }) => {
           <View style={{ marginVertical: 16 }}>
             {resultsCount && resultsCount > 0 ? (
               <FlatList
-                data={filteredServices}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => {
-                  return (
-                    <ServiceCard
-                      name={item.name}
-                      image={item.image}
-                      providerName={item.providerName}
-                      price={item.price}
-                      isOnDiscount={item.isOnDiscount}
-                      oldPrice={item.oldPrice}
-                      rating={item.rating}
-                      numReviews={item.numReviews}
-                      onPress={() => navigation.navigate("ServiceDetails")}
-                      categoryId={item.categoryId}
-                    />
-                  )
-                }}
-              />
+              data={filteredServices}
+              keyExtractor={item => item.id}
+              renderItem={({ item }) => {
+                return (
+                  <ServiceCard
+                    name={item.name}
+                    image={{ uri: "http://192.168.1.104"+item.photo_path }} 
+                    providerName={item.user.name}
+                    price={item.service_fee}
+                    // isOnDiscount={item.isOnDiscount}
+                    // oldPrice={item.oldPrice}
+                    rating={item.ratings.length}
+                    numReviews={item.ratings.length}
+                    onPress={() => navigation.navigate("ServiceDetails")}
+                    // categoryId={item.categoryId}
+                  />
+                )
+              }}
+            />
             ) : (
               <NotFoundCard />
             )}

@@ -7,6 +7,8 @@ import AppNavigation from './navigations/AppNavigation'
 import { LogBox } from 'react-native'
 import { ThemeProvider } from './theme/ThemeProvider'
 
+import { AuthProvider } from './context/AuthContext';
+
 //Ignore all log notifications
 LogBox.ignoreAllLogs();
 
@@ -16,20 +18,23 @@ export default function App() {
   const [fontsLoaded] = useFonts(FONTS)
 
   const onLayoutRootView = useCallback(async () => {
-      if (fontsLoaded) {
-          await SplashScreen.hideAsync()
-      }
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync()
+    }
   }, [fontsLoaded])
 
   if (!fontsLoaded) {
-      return null
+    return null
   }
 
   return (
-    <ThemeProvider>
-      <SafeAreaProvider onLayout={onLayoutRootView}>
-        <AppNavigation />
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <SafeAreaProvider onLayout={onLayoutRootView}>
+          <AppNavigation />
+        </SafeAreaProvider>
+      </ThemeProvider>
+    </AuthProvider>
+
   );
 }

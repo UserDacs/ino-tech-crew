@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, Switch } from 'react-native';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef , useContext , useEffect} from 'react';
 import { COLORS, SIZES, icons, images } from '../constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native-virtualized-view';
@@ -9,10 +9,65 @@ import SettingsItem from '../components/SettingsItem';
 import { useTheme } from '../theme/ThemeProvider';
 import RBSheet from "react-native-raw-bottom-sheet";
 import Button from '../components/Button';
+import { AuthContext } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { IMAGE_BASE_URL } from '@env';
 
 const Profile = ({ navigation }) => {
   const refRBSheet = useRef();
   const { dark, colors, setScheme } = useTheme();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [user_id, setUserId] = useState("");
+  const [user_image, setUserImage] = useState("");
+
+  const { logout, updateProfileImage  } = useContext(AuthContext);
+
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const userInfoString = await AsyncStorage.getItem("user_info");
+
+        if (userInfoString) {
+          const userInfo = JSON.parse(userInfoString);
+          console.log("Retrieved user ID:", userInfo);
+
+          setName(userInfo.name || "");
+          setEmail(userInfo.email || "");
+
+          setUserId(userInfo.id || "");
+          const imageUrl = IMAGE_BASE_URL + userInfo.image_path;
+          setUserImage({ uri: imageUrl }); // Wrap in { uri: ... }
+          console.log(IMAGE_BASE_URL+userInfo.image_path);
+          
+        }
+      } catch (error) {
+        console.error("Error retrieving user info:", error);
+      }
+    };
+
+    getUserInfo();
+  }, []);
+
+  const pickImage = async () => {
+    try {
+      const tempUri = await launchImagePicker();
+      if (!tempUri) return;
+
+      // Update the image state
+      setUserImage({ uri: tempUri });
+
+      console.log(IMAGE_BASE_URL+tempUri);
+      
+      // Update profile image in AuthContext
+      updateProfileImage(tempUri,user_id);
+    } catch (error) {
+      console.error("Image selection error:", error);
+    }
+  };
   /**
    * Render Header
    */
@@ -38,6 +93,8 @@ const Profile = ({ navigation }) => {
             }]}
           />
         </TouchableOpacity>
+
+        
       </TouchableOpacity>
     )
   }
@@ -45,23 +102,19 @@ const Profile = ({ navigation }) => {
    * Render User Profile
    */
   const renderProfile = () => {
-    const [image, setImage] = useState(images.user1)
-
-    const pickImage = async () => {
-      try {
-        const tempUri = await launchImagePicker()
-
-        if (!tempUri) return
-
-        // set the image
-        setImage({ uri: tempUri })
-      } catch (error) { }
-    };
+   
+    
+  
     return (
       <View style={styles.profileContainer}>
         <View>
+
+        {/* <TouchableOpacity onPress={pickImage}>
+          <Image source={{ uri: 'http://192.168.1.104/images/no-image-1.png' }}  style={{ width: 100, height: 100 }} />
+        </TouchableOpacity> */}
+
           <Image
-            source={image}
+           source={user_image}
             resizeMode='cover'
             style={styles.avatar}
           />
@@ -71,8 +124,9 @@ const Profile = ({ navigation }) => {
             <MaterialIcons name="edit" size={16} color={COLORS.white} />
           </TouchableOpacity>
         </View>
-        <Text style={[styles.title, { color: dark ? COLORS.secondaryWhite : COLORS.greyscale900 }]}>Nathalie Erneson</Text>
-        <Text style={[styles.subtitle, { color: dark ? COLORS.secondaryWhite : COLORS.greyscale900 }]}>nathalie_erneson@gmail.com</Text>
+        <Text style={[styles.title, { color: dark ? COLORS.secondaryWhite : COLORS.greyscale900 }]} 
+        >{name}</Text>
+        <Text style={[styles.subtitle, { color: dark ? COLORS.secondaryWhite : COLORS.greyscale900 }]}>{email}</Text>
       </View>
     )
   }
@@ -114,34 +168,7 @@ const Profile = ({ navigation }) => {
           name="Change Password"
           onPress={() => navigation.navigate("ChangePassword")}
         />
-        {/* <TouchableOpacity
-          onPress={() => navigation.navigate("SettingsLanguage")}
-          style={styles.settingsItemContainer}>
-          <View style={styles.leftContainer}>
-            <Image
-              source={icons.more}
-              resizeMode='contain'
-              style={[styles.settingsIcon, {
-                tintColor: dark ? COLORS.white : COLORS.greyscale900
-              }]}
-            />
-            <Text style={[styles.settingsName, {
-              color: dark ? COLORS.white : COLORS.greyscale900
-            }]}>Language & Region</Text>
-          </View>
-          <View style={styles.rightContainer}>
-            <Text style={[styles.rightLanguage, {
-              color: dark ? COLORS.white : COLORS.greyscale900
-            }]}>English (US)</Text>
-            <Image
-              source={icons.arrowRight}
-              resizeMode='contain'
-              style={[styles.settingsArrowRight, {
-                tintColor: dark ? COLORS.white : COLORS.greyscale900
-              }]}
-            />
-          </View>
-        </TouchableOpacity> */}
+  
         <TouchableOpacity
           style={styles.settingsItemContainer}>
           <View style={styles.leftContainer}>
@@ -167,21 +194,7 @@ const Profile = ({ navigation }) => {
             />
           </View>
         </TouchableOpacity>
-        {/* <SettingsItem
-          icon={icons.lockedComputerOutline}
-          name="Privacy Policy"
-          onPress={() => navigation.navigate("SettingsPrivacyPolicy")}
-        /> */}
-        {/* <SettingsItem
-          icon={icons.infoCircle}
-          name="Help Center"
-          onPress={() => navigation.navigate("HelpCenter")}
-        /> */}
-        {/* <SettingsItem
-          icon={icons.people4}
-          name="Invite Friends"
-          onPress={() => navigation.navigate("InviteFriends")}
-        /> */}
+
         <TouchableOpacity
           onPress={() => refRBSheet.current.open()}
           style={styles.logoutContainer}>
@@ -254,7 +267,10 @@ const Profile = ({ navigation }) => {
             title="Yes, Logout"
             filled
             style={styles.logoutButton}
-            onPress={() => refRBSheet.current.close()}
+            onPress={() => {
+              refRBSheet.current.close();  // Close the modal/sheet
+              logout(); // Call logout function
+            }}
           />
         </View>
       </RBSheet>
